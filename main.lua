@@ -4,8 +4,9 @@ Game = {
 
 require "menu"
 require "game"
+require "editor"
 
-local functions = {"update", "mousereleased", "draw"}
+local functions = {"update", "mousemoved", "mousepressed", "mousereleased", "draw"}
 
 function ReloadState(newstate)
    for _, f in ipairs(functions) do
@@ -17,4 +18,4 @@ function ReloadState(newstate)
    end
 end
 
-ReloadState("gamestate")
+ReloadState "editorstate"

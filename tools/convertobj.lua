@@ -91,14 +91,17 @@ function convertobject(object)
    local vertices = {}
    for _, face in ipairs(object.faces) do
       for _, comb in ipairs(face) do
+         print(comb.v)
          local vertex = object.vertices[comb.v]
          local vt = object.coords[comb.vt]
-         table.insert(vertices, { vertex.x, vertex.y, vt.u, vt.v })
+         if vertex and vt then
+            table.insert(vertices, { vertex.x, vertex.y, vt.u, vt.v })
+         end
       end
    end
    return vertices
 end
 
-local object = parseobj(io.open("test.obj", "r"):read("*a"))
-print("return " .. exporttable(convertobject(object.Plane)))
---print(exporttable(parseobj(io.open("/tmp/untitled.obj", "r"):read("*a"))))
+local object = parseobj(io.open("data/map.obj", "r"):read("*a"))
+io.open("data/bg.lua", "w"):write("return " .. exporttable(convertobject(object.bg)))
+io.open("data/road.lua", "w"):write("return " .. exporttable(convertobject(object.road)))

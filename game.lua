@@ -52,6 +52,7 @@ local player = {}
 local ground = {}
 
 function gamestate.load()
+   love.window.setVSync(0)
    love.physics.setMeter(64)
    Game.world = love.physics.newWorld(0, 9.81 * 64, true)
    local x, y = 200, 200
@@ -65,7 +66,7 @@ end
 
 function gamestate.update(dt)
    if love.keyboard.isDown "w" then
-		player.front.body:applyTorque(1000000*dt)
+		player.front.body:applyTorque(1/dt*1000000)
 	end
    if love.keyboard.isDown("a") then
       player.frame.body:applyTorque(-20000)
@@ -74,29 +75,30 @@ function gamestate.update(dt)
       player.frame.body:applyTorque(20000)
    end
    if love.keyboard.isDown("s") then
-      player.front.body:applyTorque(-1000000*dt)
+      player.front.body:applyTorque(1/dt*-1000000)
    end
 
    Game.world:update(dt)
 end
 
-local mesh = love.graphics.newMesh(require "data", "triangles", "static")
-local texture = love.graphics.newImage("image.png")
+local mesh = love.graphics.newMesh(require "data/bg", "triangles", "static")
+local texture = love.graphics.newImage("data/bg.png")
 texture:setWrap("repeat")
 mesh:setTexture(texture)
 
 function gamestate.draw()
    local w, h = love.graphics.getDimensions()
    love.graphics.translate(w / 2 - player.frame.body:getX(), h / 2 - player.frame.body:getY())
+   
+   love.graphics.setColor(1, 1, 1, 1)
+   love.graphics.draw(mesh, 300, 300, 0, 50, 50)
+
    frame.draw(player.frame)
 
    wheel.draw(player.rear)
    wheel.draw(player.front)
 
    level.draw(ground)
-
-   love.graphics.setColor(1, 1, 1, 1)
-   love.graphics.draw(mesh, 300, 300, 0, 100, 100)
 
    love.graphics.origin()
    love.graphics.print("Current FPS: "..tostring(love.timer.getFPS( )), 10, 10)
