@@ -25,19 +25,25 @@ function state.load(l, cb)
       local shape = love.physics.newEdgeShape(line[1].x, line[1].y, line[2].x, line[2].y)
       local body = love.physics.newBody(world, 0, 0, "static")
       local fixture = love.physics.newFixture(body, shape)
+      fixture:setFriction(0.9)
    end
 
    backcb = cb
 end
 
 function state.update(dt)
-	--player.rear.joint:setMotorSpeed(love.keyboard.isDown "w" and 200000 or 0);
-   --if love.keyboard.isDown("a") then
-   --   player.frame.body:applyTorque(-2000)
-   --end
-   --if love.keyboard.isDown("d") then
-   --   player.frame.body:applyTorque(2000)
-   --end
+   if love.keyboard.isDown "w" then
+      player.rear.body:applyTorque(2000)
+   end
+   if love.keyboard.isDown "s" then
+      player.rear.body:applyTorque(-2000)
+   end
+   if love.keyboard.isDown("a") then
+      player.body:applyTorque(-2000)
+   end
+   if love.keyboard.isDown("d") then
+      player.body:applyTorque(2000)
+   end
 
    world:update(dt)
 end

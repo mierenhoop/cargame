@@ -6,8 +6,8 @@ function wheel.new(world, frame, x, y)
 
    w.body = love.physics.newBody(world, x, y, "dynamic")
    w.shape = love.physics.newCircleShape(wheel.radius)
-   w.fixture = love.physics.newFixture(w.body, w.shape)
-   w.fixture:setFriction(0.1)
+   w.fixture = love.physics.newFixture(w.body, w.shape, 0.2)
+   w.fixture:setFriction(0.90)
 
 
    w.joint = love.physics.newWheelJoint(frame, w.body, x, y, 0, 1, false)
@@ -34,7 +34,7 @@ player.radius = 10
 function player.new(world, x, y)
 	local f = {}
 
-	f.body = love.physics.newBody(world, x, y, "dynamic")
+	f.body = love.physics.newBody(world, x - 30, y + 15, "dynamic")
 	f.shape = love.physics.newCircleShape(player.radius)
 	f.fixture = love.physics.newFixture(f.body, f.shape)
 
@@ -53,7 +53,8 @@ function player.draw(f)
 
    local scale = 0.17
    local iw, ih = frameimage:getWidth(), frameimage:getHeight()
-   love.graphics.draw(frameimage, f.body:getX(), f.body:getY(), f.body:getAngle(), scale, scale, iw / 2, ih / 2 * 1.5)
+   love.graphics.draw(frameimage, f.body:getX() - 10, f.body:getY(), f.body:getAngle(), scale, scale, 0, ih)
+
 end
 
 function player.drawdefault(x, y)
