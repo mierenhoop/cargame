@@ -69,4 +69,17 @@ function utils.print(v)
    print(out)
 end
 
+local functions = {"update", "mousemoved", "mousepressed", "mousereleased", "draw"}
+
+function utils.reloadstate(newstate, ...)
+   utils.print(newstate)
+   for _, f in ipairs(functions) do
+      love[f] = newstate[f]
+   end
+
+   if newstate.load then
+      newstate.load(...)
+   end
+end
+
 return utils

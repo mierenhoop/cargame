@@ -1,5 +1,7 @@
-Game.states.menustate = {}
-local menustate = Game.states.menustate
+local gamestate = require "game"
+local utils = require "utils"
+
+local state = {}
 
 local ui = {}
 
@@ -26,16 +28,16 @@ function drawbutton(b)
    love.graphics.print(b.label, b.x + 10, b.y + 10)
 end
 
-function menustate.load()
+function state.load()
    generateui()
 end
 
-function menustate.mousereleased()
+function state.mousereleased()
    if isbuttonhovered(ui.playbutton) then
-      ReloadState("gamestate")
+      utils.reloadstate(gamestate)
    end
 end
 
-function menustate.draw()
+function state.draw()
    drawbutton(ui.playbutton)
 end

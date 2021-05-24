@@ -1,13 +1,16 @@
-local gamestate = {}
-Game.states.gamestate = gamestate
+local utils = require "utils"
+
+local state = {}
 
 local wheel = {}
 wheel.radius = 20
 
+local world
+
 function wheel.new(frame, x, y)
    local w = {}
 
-   w.body = love.physics.newBody(Game.world, x, y, "dynamic")
+   w.body = love.physics.newBody(world, x, y, "dynamic")
    w.shape = love.physics.newCircleShape(wheel.radius)
    w.fixture = love.physics.newFixture(w.body, w.shape)
    w.fixture:setFriction(10.0)
@@ -32,7 +35,7 @@ frame.height = 30
 function frame.new(x, y)
 	local f = {}
 
-	f.body = love.physics.newBody(Game.world, x, y, "dynamic")
+	f.body = love.physics.newBody(world, x, y, "dynamic")
 	f.shape = love.physics.newRectangleShape(frame.width, frame.height)
 	f.fixture = love.physics.newFixture(f.body, f.shape)
 
@@ -49,22 +52,23 @@ end
 local level = require "level"
 
 local player = {}
-local ground = {}
 
-function gamestate.load()
+local map
+
+function state.load(l)
    love.window.setVSync(0)
    love.physics.setMeter(64)
-   Game.world = love.physics.newWorld(0, 9.81 * 64, true)
+   world = love.physics.newWorld(0, 9.81 * 64, true)
    local x, y = 200, 200
    player.frame = frame.new(x, y)
 
    player.rear  = wheel.new(player.frame.body, x - 35, y + 60)
    player.front = wheel.new(player.frame.body, x + 40, y + 60)
 
-   ground = level.new()
+   map = l
 end
 
-function gamestate.update(dt)
+function state.update(dt)
    if love.keyboard.isDown "w" then
 		player.front.body:applyTorque(1/dt*1000000)
 	end
@@ -78,7 +82,7 @@ function gamestate.update(dt)
       player.front.body:applyTorque(1/dt*-1000000)
    end
 
-   Game.world:update(dt)
+   world:update(dt)
 end
 
 local mesh = love.graphics.newMesh(require "data/bg", "triangles", "static")
@@ -86,7 +90,7 @@ local texture = love.graphics.newImage("data/bg.png")
 texture:setWrap("repeat")
 mesh:setTexture(texture)
 
-function gamestate.draw()
+function state.draw()
    local w, h = love.graphics.getDimensions()
    love.graphics.translate(w / 2 - player.frame.body:getX(), h / 2 - player.frame.body:getY())
    
@@ -98,8 +102,16 @@ function gamestate.draw()
    wheel.draw(player.rear)
    wheel.draw(player.front)
 
-   level.draw(ground)
+   level.draw(map)
 
    love.graphics.origin()
    love.graphics.print("Current FPS: "..tostring(love.timer.getFPS( )), 10, 10)
 end
+
+function drawflag(pos)
+   love.graphics.setColor(1, 1, 0, 0.5)
+   love.graphics.rectangle(pos.x, pos.y, 50, 50)
+   love.graphics.print("Flag", pos.x + 10, pos.y + 10)
+end
+
+return state

@@ -1,21 +1,7 @@
-Game = {
-   states = {}
-}
-
 require "menu"
 require "game"
-require "editor"
+local utils = require "utils"
+local editorstate = require "editor"
 
-local functions = {"update", "mousemoved", "mousepressed", "mousereleased", "draw"}
 
-function ReloadState(newstate)
-   for _, f in ipairs(functions) do
-      love[f] = Game.states[newstate][f]
-   end
-
-   if Game.states[newstate].load then
-      Game.states[newstate].load()
-   end
-end
-
-ReloadState "editorstate"
+utils.reloadstate(editorstate)
