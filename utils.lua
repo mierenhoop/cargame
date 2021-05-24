@@ -69,7 +69,16 @@ function utils.print(v)
    print(out)
 end
 
-local functions = {"update", "mousemoved", "mousepressed", "mousereleased", "draw"}
+local functions = {"update", "keypressed", "mousemoved", "mousepressed", "mousereleased", "draw"}
+--local funcimpls = {}
+--
+--for _, func in ipairs(functions) do
+--   love[func] = function(...)
+--      if funcimpls[func] then
+--         funcimpls[func](...)
+--      end
+--   end
+--end
 
 function utils.reloadstate(newstate, ...)
    utils.print(newstate)

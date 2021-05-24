@@ -53,7 +53,7 @@ function state.load(filename)
    if filename then
       map = level.fromfile(filename)
    else
-      map = { lines = {} }
+      map = level.new()
    end
    view = {
       scale = 1,
@@ -74,6 +74,12 @@ function state.mousepressed(x, y, button)
                view.scale = view.scale * 1.2
             elseif buttons[i] == "-" then
                view.scale = view.scale * 0.8
+            elseif buttons[i] == "play" then
+               utils.reloadstate(gamestate, map, function()
+                  local m, v = map, view
+                  utils.reloadstate(state)
+                  map, view = m, v
+               end)
             else
                mode = i
             end
@@ -98,11 +104,9 @@ function state.mousepressed(x, y, button)
             firstpoint = nil
          end
       elseif buttons[mode] == "bike" then
-         bike = { x = lx, y = ly }                  
+         map.player = { x = lx, y = ly }                  
       elseif buttons[mode] == "flag" then
          map.flag = { x = lx, y = ly }                  
-      elseif buttons[mode] == "play" then
-         utils.reloadstate(gamestate, map)
       end
    end
 end

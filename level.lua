@@ -10,11 +10,14 @@ l $x1 $y1 $x2 $y2 (Line)
 
 function level.new()
    return {
-      player = {},
-      flag = {},
+      player = {x = 0, y = 0},
       lines = {}
    }
 end
+
+local flagimage = love.graphics.newImage "data/flag.png"
+
+local flagscale = 0.3
 
 function level.draw(l)
    for _, line in ipairs(l.lines) do
@@ -23,8 +26,8 @@ function level.draw(l)
    end
    
    if l.flag then
-      love.graphics.setColor(1, 1, 1, 0.2)
-      love.graphics.rectangle("fill", l.flag.x, l.flag.y, 10000000, -10000000)
+      love.graphics.setColor(1, 1, 1)
+      love.graphics.draw(flagimage, l.flag.x, l.flag.y, 0, flagscale, flagscale, flagimage:getWidth() / 12, flagimage:getHeight())
    end
 end
 
