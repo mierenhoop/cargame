@@ -1,6 +1,8 @@
 local ui = require "ui"
 local gamestate = require "game"
 local utils = require "utils"
+local struct = require "struct"
+local http = require "socket.http"
 
 local level = require "level"
 
@@ -16,6 +18,7 @@ local buttons = {
    "bike",
    "flag",
    "play",
+   "load",
    "-",
    "+",
 }
@@ -80,6 +83,27 @@ function state.mousepressed(x, y, button)
                   utils.reloadstate(state)
                   map, view = m, v
                end)
+            elseif buttons[i] == "load" then
+               local url = love.system.getClipboardText()
+               url = string.gsub(url, "https://", "http://")
+               local body = http.request(url)
+
+               local scale = 200
+
+               if body then
+                  map.lines = {}
+
+                  local points = {struct.unpack(">".. string.rep("f", #body / 4 - 2), body, 9)}
+
+                  map.player = { x = points[5] * scale, y = points[6] * -scale - 100}
+                  map.flag = { x = points[7] * scale, y = points[8] * -scale }
+
+                  for i = 9, #points - 2, 4 do 
+                     table.insert(map.lines, { { x = points[i] * scale, y = points[i + 1] * -scale }, { x = points[i + 2] * scale, y = points[i + 3] * -scale } })
+                  end
+               else
+                  print "couldn't load link"
+               end
             else
                mode = i
             end
@@ -128,6 +152,10 @@ function state.draw()
    local lx, ly = gettransform():inverseTransformPoint(x, y)
 
    level.draw(map)
+
+   if map.player then
+      love.graphics.circle("fill", map.player.x, map.player.y, 10)
+   end
 
    love.graphics.setColor(0, 0, 1)
    for _, line in ipairs(map.lines) do

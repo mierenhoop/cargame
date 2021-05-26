@@ -7,7 +7,7 @@ function wheel.new(world, frame, x, y)
    w.body = love.physics.newBody(world, x, y, "dynamic")
    w.shape = love.physics.newCircleShape(wheel.radius)
    w.fixture = love.physics.newFixture(w.body, w.shape, 0.2)
-   w.fixture:setFriction(0.90)
+   w.fixture:setFriction(1)
 
 
    w.joint = love.physics.newWheelJoint(frame, w.body, x, y, 0, 1, false)
