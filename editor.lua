@@ -1,182 +1,119 @@
-local ui = require "ui"
-local gamestate = require "game"
-local utils = require "utils"
-local struct = require "struct"
-local http = require "socket.http"
+local state = require"gamestate":register"editor"
 
-local level = require "level"
+local ResourceManager = require "resourcemanager"
 
-local state = {}
+local road = ResourceManager:getAtlasPart("faixa #78613.png", 0, 0, 512, 128)
 
-local map
+local rocks = ResourceManager:getAtlasPart("caverna.png", 0, 0, 512, 256)
+rocks.image:setWrap("repeat")
 
-local firstpoint
+local cam = love.math.newTransform()
 
-local buttons = {
-   "move",
-   "line",
-   "bike",
-   "flag",
-   "play",
-   "load",
-   "-",
-   "+",
+local function getCamera()
+    local w, h = love.graphics.getDimensions()
+    return love.math.newTransform(w / 2, h / 2) * cam:inverse()
+end
+
+function state.update(dt)
+    local move = dt * 100
+    if love.keyboard.isDown"w" then cam:translate(0, -move) end
+    if love.keyboard.isDown"a" then cam:translate(-move, 0) end
+    if love.keyboard.isDown"s" then cam:translate(0, move) end
+    if love.keyboard.isDown"d" then cam:translate(move, 0) end
+    if love.keyboard.isDown"q" then cam:scale(1 + dt) end
+    if love.keyboard.isDown"e" then cam:scale(1 - dt) end
+end
+
+local points = {}
+local pointSize = 10
+
+local function containsCircle(a, b, r)
+    return math.sqrt(math.pow(b[1] - a[1], 2) + math.pow(b[2]-a[2], 2)) < r
+end
+
+local ground = {}
+local groundMesh
+
+local groundBottom = 10000000
+local groundTextureW = 200
+local groundTextureH = 100
+
+local function addGroundPoint(x, y)
+    if #ground == 0 then
+        ground[1] = {x, groundBottom, 0, groundBottom/groundTextureH}
+        ground[2] = {x, groundBottom, 0, groundBottom/groundTextureH}
+    end
+    ground[#ground+1] = {x, y, x / groundTextureW, y/groundTextureH}
+    ground[1][1] = ground[#ground][1]
+    ground[1][3] = ground[#ground][3]
+
+    -- TODO: shouldn't init every time
+    groundMesh = love.graphics.newMesh(ground) -- fan dynamic is implicit
+    groundMesh:setTexture(rocks.image)
+end
+
+local usingTexture = {
+    position = 1,
+    "ground", "car"
 }
 
-local mode
+function state.mousereleased()
+    local x, y = getCamera():inverseTransformPoint(love.mouse.getPosition())
+    if usingTexture[usingTexture.position] == "ground" then
+        table.insert(points, x)
+        table.insert(points, y)
 
-local buttonwidth, buttonheight = 40, 40
-
-function buttonpos(m)
-   return (m - 1) * buttonheight
+        addGroundPoint(x, y)
+    end
 end
 
-local view
-
-local function gettransform()
-   local w, h = love.graphics.getDimensions()
-   local t = love.math.newTransform()
-   t:translate(view.x + w / 2, view.y + h / 2)
-   t:scale(view.scale, view.scale)
-   return t
+function state.keypressed(a)
+    if a == "left" then
+        usingTexture.position = ((usingTexture.position-2) % (#usingTexture))+1
+    elseif a == "right" then
+        usingTexture.position = ((usingTexture.position) % (#usingTexture))+1
+    end
 end
 
-local function intersectcircle(p1, p2, r)
-   local dx, dy = p1.x - p2.x, p1.y - p2.y
-   return math.sqrt(dx * dx + dy * dy) < r
-end
-         
-local radius = 10
+local function unitVector(x, y)
+    local len = math.sqrt(x*x + y*y)
 
-function getradius()
-   return radius / view.scale
-end
-
-function state.load(filename)
-   if filename then
-      map = level.fromfile(filename)
-   else
-      map = level.new()
-   end
-   view = {
-      scale = 1,
-      x = 0,
-      y = 0,
-   }
-
-   mode = 2
-end
-
-function state.mousepressed(x, y, button)
-   local lx, ly = gettransform():inverseTransformPoint(x, y)
-   if x < buttonwidth then
-      print (mode)
-      for i in ipairs(buttons) do
-         if ui.hovered(0, buttonpos(i), buttonwidth, buttonheight) then
-            if buttons[i] == "+" then
-               view.scale = view.scale * 1.2
-            elseif buttons[i] == "-" then
-               view.scale = view.scale * 0.8
-            elseif buttons[i] == "play" then
-               utils.reloadstate(gamestate, map, function()
-                  local m, v = map, view
-                  utils.reloadstate(state)
-                  map, view = m, v
-               end)
-            elseif buttons[i] == "load" then
-               local url = love.system.getClipboardText()
-               url = string.gsub(url, "https://", "http://")
-               local body = http.request(url)
-
-               local scale = 200
-
-               if body then
-                  map.lines = {}
-
-                  local points = {struct.unpack(">".. string.rep("f", #body / 4 - 2), body, 9)}
-
-                  map.player = { x = points[5] * scale, y = points[6] * -scale - 100}
-                  map.flag = { x = points[7] * scale, y = points[8] * -scale }
-
-                  for i = 9, #points - 2, 4 do 
-                     table.insert(map.lines, { { x = points[i] * scale, y = points[i + 1] * -scale }, { x = points[i + 2] * scale, y = points[i + 3] * -scale } })
-                  end
-               else
-                  print "couldn't load link"
-               end
-            else
-               mode = i
-            end
-            break
-         end
-      end
-   else
-      if buttons[mode] == "line" then
-         for _, line in ipairs(map.lines) do
-            for i = 1, 2 do
-               if intersectcircle(line[i], { x = lx, y = ly }, getradius()) then
-                  lx, ly = line[i].x, line[i].y
-                  goto out
-               end
-            end
-         end
-         ::out::
-         if not firstpoint then
-            firstpoint = { x = lx, y = ly }
-         else
-            table.insert(map.lines, { firstpoint, { x = lx, y = ly } })
-            firstpoint = nil
-         end
-      elseif buttons[mode] == "bike" then
-         map.player = { x = lx, y = ly }                  
-      elseif buttons[mode] == "flag" then
-         map.flag = { x = lx, y = ly }                  
-      end
-   end
-end
-
-
-function state.mousemoved(x, y, dx, dy)
-   if x > buttonwidth and love.mouse.isDown(1) then
-      if buttons[mode] == "move" then
-         view.x, view.y = view.x + dx, view.y + dy
-      end
-   end
+    return x / len, y / len
 end
 
 function state.draw()
-   love.graphics.origin()
-   love.graphics.applyTransform(gettransform())
-      
-   local x, y = love.mouse.getPosition()
-   local lx, ly = gettransform():inverseTransformPoint(x, y)
+    love.graphics.reset()
+    love.graphics.applyTransform(getCamera())
 
-   level.draw(map)
+    --love.graphics.setColor(1,1,1)
+    --love.graphics.setLineWidth(10)
+    --if #points > 3 then love.graphics.line(points) end
+    --love.graphics.points(points)
+    for i = 1, #points, 2 do
+        love.graphics.setColor(1, 1, (containsCircle({points[i],points[i+1]}, {getCamera():inverseTransformPoint(love.mouse.getPosition())}, pointSize) and 1 or 0))
+        local x, y = points[i], points[i+1]
+        love.graphics.circle("fill", x, y, pointSize)
 
-   if map.player then
-      love.graphics.circle("fill", map.player.x, map.player.y, 10)
-   end
+        if i + 5 <= #points then
+            local x1, y1, x2, y2, x3, y3 = select(i, unpack(points))
+            local n1x, n1y = unitVector(y1 - y2, -(x1 - x2))
+            local n2x, n2y = unitVector(y2 - y3, -(x2 - x3))
+            local nx, ny = unitVector(n1x + n2x, n1y + n2y)
 
-   love.graphics.setColor(0, 0, 1)
-   for _, line in ipairs(map.lines) do
-      for i = 1, 2 do
-         if intersectcircle(line[i], { x = lx, y = ly }, getradius()) then
-            love.graphics.circle("fill", line[i].x, line[i].y, getradius())
-         end
-      end
-   end
+            local h = 50
+            nx, ny = nx * h, ny * h
 
-   love.graphics.setColor(1, 1, 1)
-   if buttons[mode] ~= "line" then firstpoint = nil end
-   if firstpoint then
-      love.graphics.line(firstpoint.x, firstpoint.y, lx, ly)
-   end
+            love.graphics.line(x1, y1, x2, y2)
+            love.graphics.line(x2, y2, x2 + nx, y2 + ny)
+            love.graphics.line(x1, y1, x2 + nx, y2 + ny)
+        end
+    end
 
-   love.graphics.origin()
+    if groundMesh then
+        love.graphics.draw(groundMesh)
+    end
 
-   for m in ipairs(buttons) do
-      ui.drawbutton(0, buttonpos(m), buttonwidth, buttonheight, buttons[m])
-   end
+    love.graphics.reset()
+
+    love.graphics.print(usingTexture[usingTexture.position])
 end
-
-return state

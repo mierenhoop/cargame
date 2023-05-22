@@ -1,7 +1,11 @@
-require "menu"
-require "game"
-local utils = require "utils"
-local editorstate = require "editor"
+local GameState = require "gamestate"
 
+require "titlescreen"
+require "playing"
+require "editor"
+require"careditor"
+require"atlaseditor"
 
-utils.reloadstate(editorstate)
+function love.load()
+    GameState.switch"atlaseditor"
+end

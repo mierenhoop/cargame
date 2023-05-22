@@ -1,35 +1,13 @@
-local level = {}
+local readPLY = require "ply"
 
---[[
-Level file:
-p $x $y (Player position)
-f $x $y (Flag position)
-l $x1 $y1 $x2 $y2 (Line)
-]]
+local levels = {}
 
-
-function level.new()
-   return {
-      player = {x = 0, y = 0},
-      lines = {}
-   }
+-- Currently don't load at startup
+-- because it can only load from love data folder
+local function loadLevel(name)
+    local file = "data/levels/" .. name
 end
 
-local flagimage = love.graphics.newImage "data/flag.png"
-
-local flagscale = 0.3
-
-function level.draw(l)
-   for _, line in ipairs(l.lines) do
-      love.graphics.setColor(1, 1, 1)
-      love.graphics.line(line[1].x, line[1].y, line[2].x, line[2].y)
-   end
-   
-   if l.flag then
-      love.graphics.setColor(1, 1, 1)
-      love.graphics.draw(flagimage, l.flag.x, l.flag.y, 0, flagscale, flagscale, flagimage:getWidth() / 12, flagimage:getHeight())
-   end
+for _, level in ipairs(levels) do
+    loadLevel(level)
 end
-
-
-return level
